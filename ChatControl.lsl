@@ -12,19 +12,23 @@
 // ███████║╚██████╔╝██║        ██║   ╚███╔███╔╝██║  ██║██║  ██║███████╗                                   
 // ╚══════╝ ╚═════╝ ╚═╝        ╚═╝    ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝      
 //
-//key pan = ""; //Add here your key if you need it for debug purposes.
+// This script was created by Ferd Frederix.
+// It had some issues and they were fixed and some points were finetuned by Pandora Bryer.
+//
+//key ownerKey = ""; //Add here your key if you need it for debug purposes.
 // This chatbot is for OpenSim Only. It only works on NPC's.
 
 // Rev 1.1 08-27-2015 made API use first name as the Hypergid names were too long
-
+// Rev 2.0 - The greet mode was improved by Pandora Breyer.
+//
 // Chatbot for PersonalityForge. Get a free  account at http://www.personalityforge.com.
 // 5,000 chats are free.
 // :CODE:
 
-// fiorst, get a free  account at http://www.personalityforge.com.
+// first, get a free  account at http://www.personalityforge.com.
 // Get an API ID, and add it to the apiKey :
 
-string apiKey = "WpyegtBO2PpRibaU";    // your supplied apiKey from your Chat Bot API subscription
+string apiKey = "gggg555y5y";    // your supplied apiKey from your Chat Bot API subscription
 
 // Add the domain *.secondlife.com or your OpenSim server IP to the list of authorized domains at http://www.personalityforge.com/botland/myapi.php
 // Add a checkmark to the "Enable Simple API" in tyour account.
@@ -35,7 +39,7 @@ string apiKey = "WpyegtBO2PpRibaU";    // your supplied apiKey from your Chat Bo
 
 // look at http://www.personalityforge.com/bookofapi.php for more public chat bots
 
-string chatBotID = "188379";    // the ID of the chat bot you're talking to
+string chatBotID = "00000";    // the ID of the chat bot you're talking to
 integer greeting = TRUE;     // if TRUE, say hello when anyone comes up.
 integer repeat = 30; //The seconds that the sensor will repeat its scan.
 
@@ -81,7 +85,7 @@ list gAnimations = ["normal", "hello",
                     "asking","express_shrug"];
                     
 
-list lAvatars; // a list of visitors 
+list lAvatars; // a list of visitors for the script know whom to greet and who was already greeted.
 list lGreeted; // a list ot visitors already greeted that may return.
 
 DEBUG(string msg)
@@ -117,19 +121,23 @@ default
 
     sensor(integer N) 
     {
+        // This sesor detects avatars on the entire region. It's recommended to
+        // place the NPC near a landing point. 
         list avis = llGetAgentList(AGENT_LIST_REGION, []);
         integer avisLen = llGetListLength(avis);
         integer i;
         list avsDetected = [];
-        //osNpcSayTo(npcKey, pan, PUBLIC_CHANNEL, "AvsDetected: "+avsDetected);
+        //osNpcSayTo(npcKey, ownerKey, PUBLIC_CHANNEL, "AvsDetected: "+avsDetected);
         for (i = 0 ; i < avisLen; i ++)
         {
             key avatarKey = llList2Key(avis, i);
             avsDetected += avatarKey;
-            //osNpcSayTo(npcKey, pan, PUBLIC_CHANNEL, "lAvatars now: "+lAvatars);
-            //osNpcSayTo(npcKey, pan, PUBLIC_CHANNEL, "lGreeted now: "+lGreeted);
+            //osNpcSayTo(npcKey, ownerKey, PUBLIC_CHANNEL, "lAvatars now: "+lAvatars);
+            //osNpcSayTo(npcKey, ownerKey, PUBLIC_CHANNEL, "lGreeted now: "+lGreeted);
             if (llListFindList(lAvatars,[avatarKey]) == -1 & !osIsNpc(avatarKey)) 
             {
+                // The next command will be the first greet message for all avatars that come.
+                // Edit it to fit your needs or your preferences.
                 osNpcSay(npcKey,"Hi there, " + llKey2Name(avatarKey));
                 lAvatars += avatarKey;
                 lGreeted += 1;
@@ -146,14 +154,15 @@ default
                 {
                     if (llList2String(lAvatars, j) == avatarKey & (integer)llList2String(lGreeted, j) == 2)
                     {
+                        // The next command will be the greet if an avatar that was already greeted and gone away return.
+                        // Edit it to fit your needs or your preferences.
                         osNpcSay(npcKey,"Hello again, " + llKey2Name(avatarKey));
                         lGreeted = llListReplaceList(lGreeted, [1], j, j);
                     }
                 }
-            }//fim do if (llListFindList(lAvatars,[avatarKey]) == -1) e do else
-        }//fim do for
+            }
+        }
         integer num = llGetListLength(lAvatars);
-        //Implementar a mudança de status na lGreeted se for embora. Compara os que estão em lavatars com os que estão em avsDetected.
         integer k;
         for (k = 0 ; k < num; k ++)
         {
@@ -165,6 +174,9 @@ default
             if ((integer) llList2String(lGreeted, k) == 0)
             {
                 lGreeted = llListReplaceList(lGreeted, [2], k, k);
+                // The next command is to ba said if someone is gone.
+                // Comment the line if you don't want the NPS to say nothing.
+                // Or edit the command to fit your needs or your preference.
                 osNpcSay(npcKey,"Oh... " + llKey2Name(avatarKey2) + " is gone...");
             }
         }
@@ -173,6 +185,10 @@ default
 
     no_sensor()
     {
+        // If no one is present, everyone on the list that controls who was already greeted turns to 2.
+        // This way, the NPC stays on a waiting mode. If someone that was already greeted returns,
+        // the NPS says the "hello again" phrase and if someone new appears, the NPC will greet
+        // normally.
         AvatarPresent = FALSE;
         integer h = llGetListLength(lGreeted);
         integer i;
@@ -180,9 +196,6 @@ default
         {
             lGreeted = llListReplaceList(lGreeted, [2], i, i);
         }
-        
-        //osNpcSayTo(npcKey, pan, PUBLIC_CHANNEL, "lAvatars now: "+lAvatars);
-        //osNpcSayTo(npcKey, pan, PUBLIC_CHANNEL, "lGreeted now: "+lGreeted);
     }
 
     listen(integer channel, string name, key id, string message)
